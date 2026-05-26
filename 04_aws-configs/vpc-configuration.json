@@ -1,0 +1,138 @@
+{
+  "VPCConfiguration": {
+    "VPCName": "paybridge-production-vpc",
+    "Region": "ap-south-1",
+    "CIDRBlock": "10.0.0.0/16",
+    "EnableDNSHostnames": true,
+    "EnableDNSSupport": true,
+    "Tags": [
+      {"Key": "Project", "Value": "PayBridge"},
+      {"Key": "Environment", "Value": "Production"},
+      {"Key": "Compliance", "Value": "SOC2"}
+    ]
+  },
+  "Subnets": [
+    {
+      "Name": "paybridge-public-subnet-1a",
+      "CIDRBlock": "10.0.1.0/24",
+      "AvailabilityZone": "ap-south-1a",
+      "Type": "Public",
+      "Purpose": "Load balancer and NAT gateway"
+    },
+    {
+      "Name": "paybridge-public-subnet-1b",
+      "CIDRBlock": "10.0.2.0/24",
+      "AvailabilityZone": "ap-south-1b",
+      "Type": "Public",
+      "Purpose": "Load balancer redundancy"
+    },
+    {
+      "Name": "paybridge-private-subnet-1a",
+      "CIDRBlock": "10.0.3.0/24",
+      "AvailabilityZone": "ap-south-1a",
+      "Type": "Private",
+      "Purpose": "Application servers"
+    },
+    {
+      "Name": "paybridge-private-subnet-1b",
+      "CIDRBlock": "10.0.4.0/24",
+      "AvailabilityZone": "ap-south-1b",
+      "Type": "Private",
+      "Purpose": "Application server redundancy"
+    },
+    {
+      "Name": "paybridge-database-subnet-1a",
+      "CIDRBlock": "10.0.5.0/24",
+      "AvailabilityZone": "ap-south-1a",
+      "Type": "Private",
+      "Purpose": "RDS PostgreSQL primary"
+    },
+    {
+      "Name": "paybridge-database-subnet-1b",
+      "CIDRBlock": "10.0.6.0/24",
+      "AvailabilityZone": "ap-south-1b",
+      "Type": "Private",
+      "Purpose": "RDS PostgreSQL standby"
+    }
+  ],
+  "SecurityGroups": [
+    {
+      "Name": "paybridge-alb-sg",
+      "Description": "Load balancer security group",
+      "InboundRules": [
+        {
+          "Protocol": "TCP",
+          "Port": 443,
+          "Source": "0.0.0.0/0",
+          "Description": "HTTPS from internet"
+        },
+        {
+          "Protocol": "TCP",
+          "Port": 80,
+          "Source": "0.0.0.0/0",
+          "Description": "HTTP redirect to HTTPS"
+        }
+      ],
+      "OutboundRules": [
+        {
+          "Protocol": "All",
+          "Port": "All",
+          "Destination": "10.0.0.0/16",
+          "Description": "All traffic to VPC"
+        }
+      ]
+    },
+    {
+      "Name": "paybridge-app-sg",
+      "Description": "Application server security group",
+      "InboundRules": [
+        {
+          "Protocol": "TCP",
+          "Port": 3000,
+          "Source": "paybridge-alb-sg",
+          "Description": "Traffic from load balancer only"
+        }
+      ],
+      "OutboundRules": [
+        {
+          "Protocol": "TCP",
+          "Port": 5432,
+          "Destination": "paybridge-db-sg",
+          "Description": "PostgreSQL to database"
+        },
+        {
+          "Protocol": "TCP",
+          "Port": 6379,
+          "Destination": "paybridge-redis-sg",
+          "Description": "Redis cache"
+        },
+        {
+          "Protocol": "TCP",
+          "Port": 443,
+          "Destination": "0.0.0.0/0",
+          "Description": "HTTPS to external APIs"
+        }
+      ]
+    },
+    {
+      "Name": "paybridge-db-sg",
+      "Description": "Database security group",
+      "InboundRules": [
+        {
+          "Protocol": "TCP",
+          "Port": 5432,
+          "Source": "paybridge-app-sg",
+          "Description": "PostgreSQL from app servers only"
+        }
+      ],
+      "OutboundRules": []
+    }
+  ],
+  "FlowLogs": {
+    "Enabled": true,
+    "TrafficType": "ALL",
+    "Destination": "CloudWatch Logs",
+    "LogGroupName": "paybridge-vpc-flow-logs",
+    "RetentionDays": 90
+  }
+}
