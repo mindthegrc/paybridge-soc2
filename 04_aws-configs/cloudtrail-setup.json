@@ -1,0 +1,29 @@
+{
+  "TrailName": "paybridge-audit-trail",
+  "S3BucketName": "paybridge-cloudtrail-logs",
+  "IncludeGlobalServiceEvents": true,
+  "IsMultiRegionTrail": true,
+  "EnableLogFileValidation": true,
+  "EventSelectors": [
+    {
+      "ReadWriteType": "All",
+      "IncludeManagementEvents": true,
+      "DataResources": [
+        {
+          "Type": "AWS::S3::Object",
+          "Values": ["arn:aws:s3:::paybridge-*"]
+        },
+        {
+          "Type": "AWS::Lambda::Function",
+          "Values": ["arn:aws:lambda:*"]
+        }
+      ]
+    }
+  ],
+  "CloudWatchLogsLogGroupArn": "arn:aws:logs:ap-south-1:ACCOUNT_ID:log-group:paybridge-cloudtrail-logs",
+  "Tags": [
+    {"Key": "Project", "Value": "PayBridge"},
+    {"Key": "Environment", "Value": "Production"},
+    {"Key": "Compliance", "Value": "SOC2"}
+  ]
+}
